@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-// Grid frames: 5 rows x 5 columns = 25 frames
-// Row 1 (top) -> Row 5 (bottom)
-// Col 1 (left) -> Col 5 (right)
+// 5x5 Grid frames mapping (r1c1 to r5c5)
 const IDLE = { row: 3, col: 3 };
-const AMBIENT = [
+const AMBIENT_WAYPOINTS = [
   { row: 3, col: 3 }, // center
   { row: 2, col: 3 }, // up
   { row: 2, col: 4 }, // up-right
@@ -19,31 +17,48 @@ const AMBIENT = [
 export default function InteractiveCanvas() {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const floatWrapperRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
 
-  // High performance tracking state stored in ref - 0 React state re-renders during mouse moves
-  const trackingState = useRef({
-    current: { ...IDLE },
-    target: { ...IDLE },
+  // High performance tracking state stored entirely in ref:
+  // ZERO React re-renders during mouse moves for 120fps buttery smooth performance
+  const physicsRef = useRef({
+    // Canvas frame mapping
+    currentFrame: { ...IDLE },
+    targetFrame: { ...IDLE },
     drawnKey: null,
-    isHovering: false,
     lastInteraction: Date.now(),
     ambientIdx: 0,
-    queued: false
+
+    // Smooth cursor tracking with LERP & Damping
+    targetTiltX: 0,
+    targetTiltY: 0,
+    currentTiltX: 0,
+    currentTiltY: 0,
+    targetTransX: 0,
+    targetTransY: 0,
+    currentTransX: 0,
+    currentTransY: 0,
+
+    // RAF handle
+    rafId: null,
+    isDestroyed: false
   });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
-    if (!canvas || !container) return;
+    const floatWrapper = floatWrapperRef.current;
+    if (!canvas || !container || !floatWrapper) return;
 
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     const frameCache = {};
-    let isDestroyed = false;
+    const state = physicsRef.current;
+    state.isDestroyed = false;
 
-    // Preload all 25 frame images into memory
+    // Preload all 25 frame images into cache
     const preloadFrames = async () => {
       const promises = Array.from({ length: 25 }, (_, i) => {
         const r = Math.floor(i / 5) + 1;
@@ -55,23 +70,23 @@ export default function InteractiveCanvas() {
             frameCache[key] = img;
             resolve();
           };
-          img.src = `assets/frames/r${r}c${c}.jpg`;
+          // Support both absolute and relative public path
+          img.src = `/assets/frames/r${r}c${c}.jpg`;
         });
       });
 
       await Promise.all(promises);
-      if (!isDestroyed) {
+      if (!state.isDestroyed) {
         setIsReady(true);
         resizeCanvas();
         drawCurrentFrame();
-        startAmbientLoop();
       }
     };
 
     function resizeCanvas() {
-      if (!canvas || isDestroyed) return;
+      if (!canvas || state.isDestroyed) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
 
       const targetWidth = Math.round(rect.width * dpr);
@@ -80,7 +95,7 @@ export default function InteractiveCanvas() {
       if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-        trackingState.current.drawnKey = null; // Force redraw on resize
+        state.drawnKey = null; // Force redraw on resize
         drawCurrentFrame();
       }
     }
@@ -110,13 +125,9 @@ export default function InteractiveCanvas() {
       ctx.drawImage(img, dx, dy, dw, dh);
     }
 
-    // Immediate frame drawer on requestAnimationFrame
     function drawCurrentFrame() {
-      trackingState.current.queued = false;
-      if (isDestroyed || !canvas) return;
-
-      const state = trackingState.current;
-      const key = `${state.current.row}-${state.current.col}`;
+      if (state.isDestroyed || !canvas) return;
+      const key = `${state.currentFrame.row}-${state.currentFrame.col}`;
       if (key === state.drawnKey) return;
 
       const img = frameCache[key];
@@ -126,76 +137,104 @@ export default function InteractiveCanvas() {
       state.drawnKey = key;
     }
 
-    function scheduleDraw() {
-      if (!trackingState.current.queued && !isDestroyed) {
-        trackingState.current.queued = true;
-        requestAnimationFrame(drawCurrentFrame);
-      }
-    }
-
-    // Map exact cursor coordinates across the screen to 5x5 gaze grid
-    function setFromCursor(clientX, clientY) {
-      const state = trackingState.current;
-      state.isHovering = true;
+    // Map cursor position to 5x5 gaze grid and 3D antigravity tilt targets
+    function updateCursorTargets(clientX, clientY) {
       state.lastInteraction = Date.now();
 
-      const normX = Math.min(Math.max(clientX / window.innerWidth, 0), 1);
-      const normY = Math.min(Math.max(clientY / window.innerHeight, 0), 1);
+      const winW = window.innerWidth || 1;
+      const winH = window.innerHeight || 1;
 
-      // Exact sector mapping
-      const col = normX < 0.20 ? 1 : normX < 0.40 ? 2 : normX < 0.60 ? 3 : normX < 0.80 ? 4 : 5;
-      const row = normY < 0.20 ? 1 : normY < 0.40 ? 2 : normY < 0.60 ? 3 : normY < 0.80 ? 4 : 5;
+      // Normalized coordinates from -1 to 1 (0 at center)
+      const normX = (clientX / winW - 0.5) * 2;
+      const normY = (clientY / winH - 0.5) * 2;
 
-      const next = { row, col };
-      if (next.row !== state.current.row || next.col !== state.current.col) {
-        state.current = next;
-        scheduleDraw();
+      // Antigravity 3D tilt targets (degrees) & subtle translation (px)
+      state.targetTiltX = -normY * 11; // Tilt up/down on Y cursor movement
+      state.targetTiltY = normX * 13;  // Tilt left/right on X cursor movement
+      state.targetTransX = normX * 18; // Subtle drift towards mouse
+      state.targetTransY = normY * 14;
+
+      // Gaze sector for 5x5 grid (0 to 1)
+      const uX = Math.min(Math.max(clientX / winW, 0), 1);
+      const uY = Math.min(Math.max(clientY / winH, 0), 1);
+
+      const col = uX < 0.20 ? 1 : uX < 0.40 ? 2 : uX < 0.60 ? 3 : uX < 0.80 ? 4 : 5;
+      const row = uY < 0.20 ? 1 : uY < 0.40 ? 2 : uY < 0.60 ? 3 : uY < 0.80 ? 4 : 5;
+
+      state.targetFrame = { row, col };
+    }
+
+    function resetToIdle() {
+      state.targetTiltX = 0;
+      state.targetTiltY = 0;
+      state.targetTransX = 0;
+      state.targetTransY = 0;
+      state.targetFrame = { ...IDLE };
+    }
+
+    // Main Antigravity Animation Loop (LERP + Zero-G Sinusoidal Float)
+    function loop(timestamp) {
+      if (state.isDestroyed) return;
+
+      // 1. Ambient idle wandering when mouse is inactive for > 3.5s
+      if (Date.now() - state.lastInteraction > 3500) {
+        const cycle = Math.floor(timestamp / 2200);
+        const waypoint = AMBIENT_WAYPOINTS[cycle % AMBIENT_WAYPOINTS.length];
+        state.targetFrame = waypoint;
       }
-    }
 
-    function setIdle() {
-      const state = trackingState.current;
-      state.isHovering = false;
-      state.lastInteraction = Date.now();
-      if (state.current.row !== IDLE.row || state.current.col !== IDLE.col) {
-        state.current = { ...IDLE };
-        scheduleDraw();
+      // 2. Linear Interpolation (LERP) with damping factor (0.05) for smooth inertia
+      const damping = 0.055;
+      state.currentTiltX += (state.targetTiltX - state.currentTiltX) * damping;
+      state.currentTiltY += (state.targetTiltY - state.currentTiltY) * damping;
+      state.currentTransX += (state.targetTransX - state.currentTransX) * damping;
+      state.currentTransY += (state.targetTransY - state.currentTransY) * damping;
+
+      // 3. Continuous zero-gravity antigravity float (multi-frequency harmonics)
+      const t = timestamp * 0.0015;
+      const floatY = Math.sin(t) * 14 + Math.sin(t * 0.5) * 4;
+      const floatX = Math.cos(t * 0.75) * 6;
+      const floatRotZ = Math.sin(t * 0.8) * 1.8;
+
+      // 4. Update 3D Transform on DOM element without React re-renders
+      if (floatWrapper) {
+        const transX = state.currentTransX + floatX;
+        const transY = state.currentTransY + floatY;
+        const rotX = state.currentTiltX;
+        const rotY = state.currentTiltY;
+        const rotZ = floatRotZ;
+
+        floatWrapper.style.transform = `perspective(1200px) translate3d(${transX.toFixed(2)}px, ${transY.toFixed(2)}px, 0px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg)`;
       }
-    }
 
-    // Ambient gaze wandering when user is not moving mouse
-    let ambientTimer = null;
-    function startAmbientLoop() {
-      if (ambientTimer) clearInterval(ambientTimer);
-      ambientTimer = setInterval(() => {
-        if (isDestroyed || document.hidden) return;
-        const state = trackingState.current;
-        if (Date.now() - state.lastInteraction < 3000) return;
-
-        const nextWaypoint = AMBIENT[state.ambientIdx++ % AMBIENT.length];
-        state.current = { ...nextWaypoint };
-        scheduleDraw();
-      }, 1800);
-    }
-
-    // Pointer Event Listeners
-    function onPointerMove(e) {
-      setFromCursor(e.clientX, e.clientY);
-    }
-
-    function onTouchMove(e) {
-      if (e.touches.length > 0) {
-        const t = e.touches[0];
-        setFromCursor(t.clientX, t.clientY);
+      // 5. Update canvas frame if target changed
+      if (
+        state.currentFrame.row !== state.targetFrame.row ||
+        state.currentFrame.col !== state.targetFrame.col
+      ) {
+        state.currentFrame = { ...state.targetFrame };
+        drawCurrentFrame();
       }
+
+      state.rafId = requestAnimationFrame(loop);
     }
 
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
-    document.addEventListener('mouseleave', setIdle);
-    window.addEventListener('blur', setIdle);
-    window.addEventListener('touchstart', onTouchMove, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
-    window.addEventListener('touchend', setIdle, { passive: true });
+    // High performance event listeners without React useState
+    const handleMouseMove = (e) => {
+      updateCursorTargets(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        updateCursorTargets(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('mouseleave', resetToIdle);
+    window.addEventListener('blur', resetToIdle);
+    window.addEventListener('touchend', resetToIdle);
 
     const resizeObserver = new ResizeObserver(() => {
       resizeCanvas();
@@ -203,38 +242,105 @@ export default function InteractiveCanvas() {
     resizeObserver.observe(container);
 
     preloadFrames();
+    state.rafId = requestAnimationFrame(loop);
 
     return () => {
-      isDestroyed = true;
-      if (ambientTimer) clearInterval(ambientTimer);
+      state.isDestroyed = true;
+      if (state.rafId) cancelAnimationFrame(state.rafId);
       resizeObserver.disconnect();
-      window.removeEventListener('mousemove', onPointerMove);
-      document.removeEventListener('mouseleave', setIdle);
-      window.removeEventListener('blur', setIdle);
-      window.removeEventListener('touchstart', onTouchMove);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', setIdle);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('mouseleave', resetToIdle);
+      window.removeEventListener('blur', resetToIdle);
+      window.removeEventListener('touchend', resetToIdle);
     };
   }, []);
 
   return (
-    <div className="hero-canvas-bg-layer hero-canvas-fullscreen" aria-hidden="true">
-      {/* Fullscreen Character Container */}
-      <div 
-        ref={containerRef} 
-        className="hero-canvas-container hero-canvas-cover"
+    <div
+      ref={containerRef}
+      className="absolute right-0 top-1/2 -translate-y-1/2 w-[92vw] sm:w-[80vw] md:w-[60vw] lg:w-[50vw] max-w-[850px] aspect-[16/9] pointer-events-none select-none z-[1]"
+      style={{
+        position: 'absolute',
+        right: 'clamp(0px, 3vw, 48px)',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: 'clamp(360px, 52vw, 850px)',
+        maxWidth: '850px',
+        aspectRatio: '16 / 9',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        zIndex: 1,
+        // Seamless radial mask to fade all edges cleanly into pitch black (#000000)
+        maskImage: 'radial-gradient(circle at 50% 50%, black 45%, rgba(0, 0, 0, 0.85) 60%, rgba(0, 0, 0, 0.3) 78%, transparent 95%)',
+        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 45%, rgba(0, 0, 0, 0.85) 60%, rgba(0, 0, 0, 0.3) 78%, transparent 95%)'
+      }}
+      aria-hidden="true"
+    >
+      {/* Antigravity floating wrapper with 3D perspective and physics */}
+      <div
+        ref={floatWrapperRef}
+        className="w-full h-full will-change-transform flex items-center justify-center pointer-events-none"
+        style={{
+          width: '100%',
+          height: '100%',
+          willChange: 'transform',
+          transformStyle: 'preserve-3d',
+          pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
         <canvas
           id="characterCanvas"
           ref={canvasRef}
-          aria-label="Interactive character background animation"
+          className="w-full h-full object-cover block pointer-events-none"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            pointerEvents: 'none',
+            background: 'transparent'
+          }}
+          aria-label="Antigravity 3D character animation"
           role="img"
         />
       </div>
 
+      {/* Subtle loading badge until initial frames are primed */}
       {!isReady && (
-        <div className="canvas-loading-badge">
-          <div className="canvas-loading-spinner" />
+        <div
+          className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#121215]/80 backdrop-blur-md border border-white/10 text-xs text-neutral-400 pointer-events-none"
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            right: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(18, 18, 21, 0.85)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            fontSize: '11px',
+            color: '#8C8C94',
+            pointerEvents: 'none'
+          }}
+        >
+          <div
+            className="w-2.5 h-2.5 border-2 border-white/20 border-t-[#E07A5F] rounded-full animate-spin"
+            style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              borderTopColor: '#E07A5F',
+              animation: 'spin 0.8s linear infinite'
+            }}
+          />
           <span>Loading 3D asset</span>
         </div>
       )}
