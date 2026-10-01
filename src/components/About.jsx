@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeTypingAnimation from './CodeTypingAnimation';
 
 const metricsData = [
   { value: '10+', label: 'Projects Shipped' },
@@ -35,11 +36,9 @@ export default function About() {
             </ul>
           </div>
 
-          <figure className="photo photo-about reveal">
-            <div className="photo-about-art" />
-            <div className="photo-badge">Crafted with precision</div>
-            <figcaption>Same ideas, different stories</figcaption>
-          </figure>
+          <div className="reveal">
+            <CodeTypingAnimation />
+          </div>
         </div>
       </div>
     </section>

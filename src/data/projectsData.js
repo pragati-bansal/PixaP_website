@@ -1,8 +1,8 @@
 export const projectsData = [
   {
-    id: 'elias-thorne',
+    id: 'personal-project-1',
     num: '01',
-    category: 'Personal Websites',
+    category: 'Personal Website',
     categoryKey: 'personal',
     title: 'Elias Thorne Studio',
     tagline: 'Personal brand & creative director digital home',
@@ -10,57 +10,25 @@ export const projectsData = [
     tags: ['React', 'Framer Motion', 'Tailwind', 'UI/UX'],
     image: '/assets/projects/project1.jpg',
     year: '2024',
-    client: 'Elias Thorne',
-    role: 'Lead UI/UX & Web Development',
+    client: 'Personal Project',
+    role: 'Design & Full-Stack Development',
     liveUrl: 'https://example.com/project-1',
-    caseStudy: 'Crafted to elevate personal presence with high-contrast editorial aesthetics, custom portfolio grids, and smooth scroll transitions that make every visitor pause and engage.'
+    caseStudy: 'Crafted to elevate personal presence with high-contrast editorial aesthetics, custom portfolio grids, and smooth scroll transitions.'
   },
   {
-    id: 'creativlytics',
+    id: 'platform-project-2',
     num: '02',
-    category: 'Portfolios',
-    categoryKey: 'portfolios',
+    category: 'Web Application',
+    categoryKey: 'web-app',
     title: 'Creativlytics Platform',
     tagline: 'Interactive work showcase & analytics dashboard',
     description: 'A comprehensive creative portfolio and performance suite showcasing design systems, metrics, and multi-campaign analytics.',
     tags: ['Next.js', 'TypeScript', 'Charts.js', 'Design System'],
     image: '/assets/projects/project2.jpg',
     year: '2024',
-    client: 'Creativlytics Inc.',
-    role: 'Product Designer & Frontend Engineer',
+    client: 'Client Project',
+    role: 'Frontend Engineering & UI Design',
     liveUrl: 'https://example.com/project-2',
-    caseStudy: 'Built for high performance with real-time responsive data visualizations, customizable card layouts, and a dark-mode aesthetic layout engineered for clarity.'
-  },
-  {
-    id: 'aurelien-paris',
-    num: '03',
-    category: 'Business Websites',
-    categoryKey: 'business',
-    title: 'Aurélien Atelier',
-    tagline: 'Digital flagship for modern luxury fashion brand',
-    description: 'A bespoke brand showcase and digital atelier engineered with high-definition media layouts and seamless product storytelling.',
-    tags: ['React', 'E-commerce', 'Tailwind', 'Editorial'],
-    image: '/assets/projects/project3.jpg',
-    year: '2024',
-    client: 'Aurélien Paris',
-    role: 'Full-Stack Developer & Brand Design',
-    liveUrl: 'https://example.com/project-3',
-    caseStudy: 'Crafted with premium typography, curated collection lookbooks, and high conversion landing pages with minimal friction and rapid load times.'
-  },
-  {
-    id: 'synapse-interactive',
-    num: '04',
-    category: 'Custom Projects',
-    categoryKey: 'custom',
-    title: 'Synapse 3D Experience',
-    tagline: 'Experimental interactive 3D web application',
-    description: 'A bespoke interactive web application exploring 3D fluid dynamics, spatial UI, and generative node-based workflows.',
-    tags: ['Three.js', 'WebGL', 'GSAP', 'Interactive'],
-    image: '/assets/projects/project4.jpg',
-    year: '2024',
-    client: 'Synapse Labs',
-    role: 'Creative Developer & 3D Specialist',
-    liveUrl: 'https://example.com/project-4',
-    caseStudy: 'Pushed the boundaries of web capabilities with WebGL shaders, interactive canvas physics, and smooth 60fps animations.'
+    caseStudy: 'Built for high performance with real-time responsive data visualizations and modern dark-mode aesthetics.'
   }
 ];
