@@ -32,7 +32,7 @@ export default function App() {
       <Navbar onOpenProjectModal={() => handleOpenModal()} />
       <main id="top">
         <Hero onOpenProjectModal={() => handleOpenModal()} />
-        <WhatWeBuild onSelectCategory={(cat) => handleOpenModal(cat)} />
+        <WhatWeBuild onOpenInquiry={(srv) => handleOpenModal(srv)} />
         <About />
         <Services onSelectService={(srv) => handleOpenModal(srv)} />
         <Process />
