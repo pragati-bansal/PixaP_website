@@ -706,8 +706,9 @@ button:hover .arr {
   justify-content: space-between;
   min-height: 290px;
   padding: 32px 24px 28px;
-  border: 1px solid rgba(14, 14, 16, 0.09);
-  background-color: #ECEAE4;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #0E0E10;
+  color: #FFFFFF;
   cursor: pointer;
   border-radius: 8px;
   text-align: left;
@@ -717,10 +718,10 @@ button:hover .arr {
 
 .what-we-build-card:hover,
 .what-we-build-card:focus-visible {
-  background-color: #FFFFFF;
-  border-color: rgba(14, 14, 16, 0.25);
+  background-color: #1A1A1E;
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
 }
 
 .card-top {
@@ -734,7 +735,7 @@ button:hover .arr {
   font-family: var(--mono, "JetBrains Mono", monospace);
   font-size: 12px;
   font-weight: 600;
-  color: #71717A;
+  color: #E4E4E7;
   letter-spacing: 0.05em;
   transition: color 300ms ease-out;
 }
@@ -748,7 +749,7 @@ button:hover .arr {
 
 .what-we-build-card:hover .card-counter,
 .what-we-build-card:focus-visible .card-counter {
-  color: #0E0E10;
+  color: #FFFFFF;
 }
 
 .card-middle {
@@ -763,7 +764,7 @@ button:hover .arr {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: #0E0E10;
+  color: #FFFFFF;
   margin: 0 0 12px 0;
   text-transform: uppercase;
   transition: color 300ms ease-out;
@@ -772,25 +773,25 @@ button:hover .arr {
 .card-arrow {
   display: inline-block;
   font-size: 18px;
-  color: #71717A;
+  color: #E4E4E7;
   transition: transform 300ms ease-out, color 300ms ease-out;
 }
 
 .what-we-build-card:hover .card-arrow,
 .what-we-build-card:focus-visible .card-arrow {
   transform: translate(6px, -6px);
-  color: #0E0E10;
+  color: #FFFFFF;
 }
 
 .what-we-build-card:hover .card-title,
 .what-we-build-card:focus-visible .card-title {
-  color: #000000;
+  color: #FFFFFF;
 }
 
 .card-tagline {
   font-size: 14px;
   font-weight: 500;
-  color: #52525B;
+  color: #F4F4F5;
   line-height: 1.45;
   margin: 0;
   transition: color 300ms ease-out;
@@ -798,26 +799,26 @@ button:hover .arr {
 
 .what-we-build-card:hover .card-tagline,
 .what-we-build-card:focus-visible .card-tagline {
-  color: #18181B;
+  color: #FFFFFF;
 }
 
 .card-bottom {
   margin-top: auto;
   padding-top: 20px;
-  border-top: 1px solid rgba(14, 14, 16, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .card-sublist {
   font-size: 12px;
   line-height: 1.6;
-  color: #71717A;
+  color: #D4D4D8;
   margin: 0;
   transition: color 300ms ease-out;
 }
 
 .what-we-build-card:hover .card-sublist,
 .what-we-build-card:focus-visible .card-sublist {
-  color: #52525B;
+  color: #FFFFFF;
 }
 
 /* Section Footer Manifesto */
