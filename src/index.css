@@ -685,7 +685,8 @@ button:hover .arr {
 .what-we-build-subhead {
   max-width: 540px;
   font-size: clamp(16px, 1.2vw, 18px);
-  color: #52525B;
+  font-weight: 600;
+  color: #18181B;
   line-height: 1.65;
   margin: 12px 0 0 0;
 }
@@ -705,10 +706,10 @@ button:hover .arr {
   justify-content: space-between;
   min-height: 290px;
   padding: 32px 24px 28px;
-  border-top: 1px solid rgba(14, 14, 16, 0.12);
-  background-color: transparent;
+  border: 1px solid rgba(14, 14, 16, 0.09);
+  background-color: #ECEAE4;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   text-align: left;
   outline: none;
   transition: background-color 300ms ease-out, border-color 300ms ease-out, transform 300ms ease-out, box-shadow 300ms ease-out;
@@ -717,9 +718,9 @@ button:hover .arr {
 .what-we-build-card:hover,
 .what-we-build-card:focus-visible {
   background-color: #FFFFFF;
-  border-top-color: #0E0E10;
+  border-color: rgba(14, 14, 16, 0.25);
   transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.07);
 }
 
 .card-top {
