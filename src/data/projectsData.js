@@ -1,19 +1,19 @@
 export const projectsData = [
   {
-    id: 'personal-project-1',
+    id: 'memories-n-beyond',
     num: '01',
-    category: 'Personal Website',
-    categoryKey: 'personal',
-    title: 'Elias Thorne Studio',
-    tagline: 'Personal brand & creative director digital home',
-    description: 'An editorial personal brand website built with fluid interactions, dynamic typography, and custom micro-animations.',
-    tags: ['React', 'Framer Motion', 'Tailwind', 'UI/UX'],
-    image: '/assets/projects/project1.jpg',
-    year: '2024',
-    client: 'Personal Project',
-    role: 'Design & Full-Stack Development',
-    liveUrl: 'https://example.com/project-1',
-    caseStudy: 'Crafted to elevate personal presence with high-contrast editorial aesthetics, custom portfolio grids, and smooth scroll transitions.'
+    category: 'E-Commerce Platform',
+    categoryKey: 'web-app',
+    title: 'Memories n Beyond',
+    tagline: 'Where feelings find forms — Handcrafted gifts & keepsakes',
+    description: 'A bespoke e-commerce and gifting brand platform built with React, Vite, and Tailwind CSS. Features custom gift categorizations, polaroid hampers, and seamless direct WhatsApp ordering with PAN-India shipping.',
+    tags: ['React', 'Vite', 'Tailwind CSS', 'Supabase', 'UI/UX Design'],
+    image: '/assets/projects/memoriesnbeyond.png',
+    year: '2025',
+    client: 'Memories n Beyond',
+    role: 'Full-Stack Development & UI/UX Design',
+    liveUrl: 'https://memoriesnbeyond.in',
+    caseStudy: 'Designed and deployed an emotionally resonant digital storefront scaling to 1000+ handcrafted orders delivered across PAN India. Crafted with high-converting responsive layouts, smooth product reveals, and zero-friction customer inquiry workflows.'
   },
   {
     id: 'platform-project-2',
